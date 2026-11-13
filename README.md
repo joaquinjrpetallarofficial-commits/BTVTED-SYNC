@@ -7,7 +7,7 @@ A browser-based research repository prototype for the Bachelor of Technical Voca
 - `index.html` — Vercel/GitHub Pages entry point; loads seed data from the root `papers-data.js`.
 - `papers-data.js` — sample research papers displayed in the application.
 - `CCD BTVTeD Sync - Open Student Research Search.html` — standalone copy with seed data embedded.
-- `DATABASE.sql` — MySQL/MariaDB schema for accounts and roles, user profiles, signup-consent records, research papers, categories, and views. It is not connected to the browser application.
+- `DATABASE.sql` — MySQL/MariaDB schema for student/admin accounts and roles, student and administrator profiles, signup-consent records, research papers, categories, and views. It is not connected to the browser application.
 
 ## Run locally
 

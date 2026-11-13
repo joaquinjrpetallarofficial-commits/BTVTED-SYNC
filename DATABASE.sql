@@ -30,6 +30,18 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
+-- Administrator-only details extend a login in users; credentials stay in
+-- one table and the role remains the source of authorization.
+CREATE TABLE IF NOT EXISTS administrator_profiles (
+  admin_profile_id    INT AUTO_INCREMENT PRIMARY KEY,
+  user_id             INT NOT NULL UNIQUE,
+  admin_title         VARCHAR(120) NULL,
+  created_by_user_id  INT NULL,
+  created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by_user_id) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
 -- Store an auditable record of the policy versions accepted at signup.
 CREATE TABLE IF NOT EXISTS privacy_consents (
   consent_id       BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -192,6 +204,15 @@ FROM users u
 LEFT JOIN user_profiles p ON p.user_id = u.user_id
 WHERE u.user_id = :user_id;
 
+-- Administrator profile. The server must also verify u.role = 'admin'
+-- before granting any administrative access.
+SELECT u.user_id, u.username, u.full_name, u.role,
+       a.admin_title, a.created_at AS admin_since
+FROM users u
+JOIN administrator_profiles a ON a.user_id = u.user_id
+WHERE u.user_id = :user_id
+  AND u.role = 'admin';
+
 -- Signup must be one transaction in trusted server code. Hash the password
 -- with Argon2id or bcrypt before inserting. Assign student role server-side;
 -- never accept a requested admin role from public signup.
@@ -205,6 +226,8 @@ WHERE u.user_id = :user_id;
 -- Create or promote an administrator only through a trusted, authorized
 -- administrator/setup process. Never expose this operation to public signup.
 -- UPDATE users SET role = 'admin' WHERE user_id = :user_id;
+-- INSERT INTO administrator_profiles (user_id, admin_title, created_by_user_id)
+-- VALUES (:admin_user_id, :admin_title, :creator_admin_user_id);
 
 -- Repository search + category filter + year sort (newest first)
 SELECT p.paper_id, p.title, p.authors, p.pub_year, c.name AS category, p.abstract
