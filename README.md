@@ -27,4 +27,4 @@ Seed papers do not include attached PDF files, so the document-opening action is
 
 Vercel and GitHub Pages can serve the root `index.html` directly. Keep `papers-data.js` in the repository root so the page can load its sample data.
 
-This project remains a static prototype: local-storage accounts, submissions, and view counts are isolated to each visitor's browser. No Vercel or Supabase project credentials are included in this repository.
+This project remains a static prototype: local-storage accounts, submissions, and view counts are isolated to each visitor's browser. Supabase is not connected. No Vercel or Supabase project credentials are included in this repository.
