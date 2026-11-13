@@ -13,7 +13,7 @@ A browser-based research repository prototype for the Bachelor of Technical Voca
 
 ## Database SQL
 
-The full Supabase schema is in [`supabase/migrations/20261113150000_initial_schema.sql`](./supabase/migrations/20261113150000_initial_schema.sql). It defines the Auth-linked `profiles`, `user_roles`, `administrator_profiles`, and `privacy_consents` tables, along with the research repository tables, access policies, and private PDF storage rules. `privacy_consents` stores separate Terms and Privacy Policy versions plus the acceptance timestamp. The migration is prepared in this repository but has not been applied to a Supabase project.
+The full Supabase schema is in [`supabase/migrations/20261113150000_initial_schema.sql`](./supabase/migrations/20261113150000_initial_schema.sql). It defines the Auth-linked `profiles`, `user_roles`, `administrator_profiles`, and `privacy_consents` tables, along with the research repository tables, access policies, and private PDF storage rules. `privacy_consents` stores separate Terms and Privacy Policy versions plus the acceptance timestamp. If the prototype `public.research_papers` table already exists, the migration preserves it as `public.research_papers_legacy` and creates the new table separately; its existing indexes are renamed to avoid collisions. Review the migration's effect on your data before applying it.
 
 ## Run locally
 

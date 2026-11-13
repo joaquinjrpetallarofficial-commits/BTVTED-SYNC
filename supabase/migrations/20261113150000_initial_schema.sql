@@ -2,6 +2,39 @@
 -- Apply with `supabase db push` after linking your Supabase project, or run
 -- this migration in the Supabase SQL Editor. Supabase Auth owns passwords.
 
+-- Keep the existing prototype table and its data before creating the
+-- Auth-linked research_papers table defined below.
+do $$
+declare
+  existing_index record;
+begin
+  if to_regclass('public.research_papers_legacy') is not null then
+    if to_regclass('public.research_papers') is not null then
+      raise exception
+        'Both public.research_papers and public.research_papers_legacy exist; review the migration state before continuing.';
+    end if;
+  elsif to_regclass('public.research_papers') is not null then
+    alter table public.research_papers rename to research_papers_legacy;
+
+    for existing_index in
+      select index_class.relname as index_name
+      from pg_index as index_info
+      join pg_class as table_class on table_class.oid = index_info.indrelid
+      join pg_namespace as table_schema on table_schema.oid = table_class.relnamespace
+      join pg_class as index_class on index_class.oid = index_info.indexrelid
+      where table_schema.nspname = 'public'
+        and table_class.relname = 'research_papers_legacy'
+    loop
+      execute format(
+        'alter index public.%I rename to %I',
+        existing_index.index_name,
+        left(existing_index.index_name, 54) || '_legacy'
+      );
+    end loop;
+  end if;
+end;
+$$;
+
 create type public.app_role as enum ('student', 'admin');
 create type public.paper_status as enum ('pending', 'approved', 'rejected');
 
