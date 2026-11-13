@@ -5,9 +5,11 @@ A browser-based research repository prototype for the Bachelor of Technical Voca
 ## Project files
 
 - `index.html` — Vercel/GitHub Pages entry point; loads seed data from the root `papers-data.js`.
+- `BTVTED.jpg` — BTVTeD / City College of Davao logo used in the page headers.
 - `papers-data.js` — sample research papers displayed in the application.
 - `CCD BTVTeD Sync - Open Student Research Search.html` — standalone copy with seed data embedded.
-- `DATABASE.sql` — MySQL/MariaDB schema for student/admin accounts and roles, student and administrator profiles, signup-consent records, research papers, categories, and views. It is not connected to the browser application.
+- `supabase/config.toml` — Supabase CLI project configuration.
+- `supabase/migrations/20261113150000_initial_schema.sql` — Supabase/PostgreSQL migration for Auth-linked profiles, student/admin roles, signup-consent records, research papers, categories, view counts, RLS policies, and private PDF storage.
 
 ## Run locally
 
@@ -15,13 +17,23 @@ Open `index.html` in a modern browser from the repository root. Keep `papers-dat
 
 Tailwind CSS loads from its CDN, so an internet connection is needed for styling. The application stores accounts, submissions, view counts, and signup-consent versions/timestamps in the current browser's local storage; this data is not shared with other users or devices. New signups must accept both the Terms and Conditions and Privacy Policy. Sign-in requires choosing the matching student or administrator account type; public signup can only create student accounts.
 
+## Supabase setup
+
+The migration has **not** been run against a Supabase project. To apply it using the Supabase CLI:
+
+1. Install the Supabase CLI and sign in with `supabase login`.
+2. From the repository root, link your project with `supabase link --project-ref YOUR_PROJECT_REF`.
+3. Review the migration, then apply it using `supabase db push`.
+
+Alternatively, review and run the migration in the Supabase Dashboard SQL Editor. It creates a private `research-papers` storage bucket (PDFs up to 2 MB), enables row-level security, and seeds discipline categories and five sample papers. Promote a trusted account to administrator only by running the commented admin setup statements at the end of the migration in the SQL Editor. Use either the CLI or SQL Editor to apply the migration, not both.
+
+Supabase Auth stores and verifies passwords; there is no password table or password hash in this migration. Public signup creates only student roles. Admin role changes must be performed by an authorized operator.
+
 ## Important limitations
 
-This is a prototype, not a production multi-user system. Authentication and role checks run in the browser, and can be altered by visitors; the default demo accounts are defined in the application code. Do not use real or sensitive account information. Use server-side authentication and authorization plus a backend database before deploying for real users. Create administrator accounts only through a trusted, authorized setup process.
+The current HTML is still a local-storage prototype and does not call Supabase. Its browser-based login and role checks can be altered by visitors, and demo credentials remain in the application code. Do not use real or sensitive account information until the HTML is integrated with Supabase Auth and the database policies have been tested.
 
-The SQL file is a separate MySQL/MariaDB schema and sample-data script; the HTML application does not connect to it or to Supabase. Its sample categories and papers can be seeded repeatedly without deleting existing rows or duplicating the five seed papers. It does not create accounts with placeholder passwords. Passwords must be hashed and verified in trusted server code; never send password hashes to the browser.
-
-The signup policies are draft templates that describe this browser-only prototype. Before real institutional use, have the responsible institution review them and specify its data controller/contact, lawful basis, retention periods, user-rights process, and service providers.
+The signup policies are draft templates that describe the browser-only prototype. Before real institutional use, have the responsible institution review them and specify its data controller/contact, lawful basis, retention periods, user-rights process, and service providers.
 
 Seed papers do not include attached PDF files, so the document-opening action is available only for submissions with an uploaded PDF.
 
@@ -29,4 +41,4 @@ Seed papers do not include attached PDF files, so the document-opening action is
 
 Vercel and GitHub Pages can serve the root `index.html` directly. Keep `papers-data.js` in the repository root so the page can load its sample data.
 
-This project remains a static prototype: local-storage accounts, submissions, and view counts are isolated to each visitor's browser. Supabase is not connected. No Vercel or Supabase project credentials are included in this repository.
+The app remains a static prototype until connected to Supabase. Never commit Supabase service-role keys, database passwords, or other secrets. No Vercel or Supabase project credentials are included in this repository.
