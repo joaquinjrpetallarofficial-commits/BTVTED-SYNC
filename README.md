@@ -11,11 +11,15 @@ A browser-based research repository prototype for the Bachelor of Technical Voca
 - `supabase/config.toml` — Supabase CLI project configuration.
 - `supabase/migrations/20261113150000_initial_schema.sql` — Supabase/PostgreSQL migration for Auth-linked profiles, student/admin roles, signup-consent records, research papers, categories, view counts, RLS policies, and private PDF storage.
 
+## Database SQL
+
+The full Supabase schema is in [`supabase/migrations/20261113150000_initial_schema.sql`](./supabase/migrations/20261113150000_initial_schema.sql). It defines the Auth-linked `profiles`, `user_roles`, `administrator_profiles`, and `privacy_consents` tables, along with the research repository tables, access policies, and private PDF storage rules. `privacy_consents` stores separate Terms and Privacy Policy versions plus the acceptance timestamp. The migration is prepared in this repository but has not been applied to a Supabase project.
+
 ## Run locally
 
 Open `index.html` in a modern browser from the repository root. Keep `papers-data.js` beside it. The standalone HTML file can also be opened on its own.
 
-Tailwind CSS loads from its CDN, so an internet connection is needed for styling. The application stores accounts, submissions, view counts, and signup-consent versions/timestamps in the current browser's local storage; this data is not shared with other users or devices. New signups must accept both the Terms and Conditions and Privacy Policy. Sign-in requires choosing the matching student or administrator account type; public signup can only create student accounts.
+Tailwind CSS loads from its CDN, so an internet connection is needed for styling. The application stores accounts, submissions, view counts, and signup-consent versions/timestamps in the current browser's local storage; this data is not shared with other users or devices. New signups must separately check that they agree to the Terms and Conditions and acknowledge the Privacy Policy. Sign-in requires choosing the matching student or administrator account type; public signup can only create student accounts.
 
 ## Supabase setup
 

@@ -77,10 +77,14 @@
                     <div class="mb-4"><label class="lbl">Username</label><input type="text" id="su-username" autocomplete="username" class="field" placeholder="Choose a username"></div>
                     <div class="mb-4"><label class="lbl">Password</label><input type="password" id="su-password" autocomplete="new-password" class="field" placeholder="At least 6 characters"></div>
                     <div class="mb-6"><label class="lbl">Confirm Password</label><input type="password" id="su-confirm" autocomplete="new-password" class="field" placeholder="Re-enter your password"></div>
-                    <div class="mb-6">
-                        <div class="flex items-start gap-2 text-sm text-slate-600">
-                            <input id="su-consent" type="checkbox" class="mt-1 accent-blue-600">
-                            <div><label for="su-consent">I have read and agree to the</label> <button type="button" onclick="openPolicy('terms')" class="text-blue-600 underline">Terms and Conditions</button> and <button type="button" onclick="openPolicy('privacy')" class="text-blue-600 underline">Privacy Policy</button>.</div>
+                    <div class="mb-6 space-y-3 text-sm text-slate-600">
+                        <div class="flex items-start gap-2">
+                            <input id="su-terms-consent" type="checkbox" class="mt-1 accent-blue-600">
+                            <div><label for="su-terms-consent">I have read and agree to the Terms and Conditions.</label> <button type="button" onclick="openPolicy('terms')" class="text-blue-600 underline">Read Terms and Conditions</button></div>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <input id="su-privacy-consent" type="checkbox" class="mt-1 accent-blue-600">
+                            <div><label for="su-privacy-consent">I have read and acknowledge the Privacy Policy.</label> <button type="button" onclick="openPolicy('privacy')" class="text-blue-600 underline">Read Privacy Policy</button></div>
                         </div>
                     </div>
                     <button id="signup-btn" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition">Sign Up</button>
@@ -606,7 +610,10 @@
             el('login-form').classList.toggle('hidden', mode !== 'login');
             el('signup-form').classList.toggle('hidden', mode !== 'signup');
             el('login-error').classList.add('hidden'); el('signup-error').classList.add('hidden');
-            if (mode === 'signup') el('su-consent').checked = false;
+            if (mode === 'signup') {
+                el('su-terms-consent').checked = false;
+                el('su-privacy-consent').checked = false;
+            }
         }
         const policyVersion = '2026-11-13';
         const policyContent = {
@@ -661,7 +668,8 @@
                   pw = el('su-password').value, err = el('signup-error');
             const fail = t => { err.textContent = t; err.classList.remove('hidden'); };
             if (!name || !username || !pw) return fail('Please fill in all fields.');
-            if (!el('su-consent').checked) return fail('Please read and accept the Terms and Conditions and Privacy Policy to create an account.');
+            if (!el('su-terms-consent').checked) return fail('Please read and agree to the Terms and Conditions to create an account.');
+            if (!el('su-privacy-consent').checked) return fail('Please read and acknowledge the Privacy Policy to create an account.');
             if (pw.length < 6) return fail('Password must be at least 6 characters.');
             if (pw !== el('su-confirm').value) return fail('Passwords do not match.');
             const users = getUsers();
