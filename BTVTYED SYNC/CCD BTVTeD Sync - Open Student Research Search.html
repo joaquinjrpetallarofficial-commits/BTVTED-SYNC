@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCD BTVTeD Sync - Open Student Research Search</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/tailwindcss">
+        .field { @apply w-full px-4 py-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent; }
+        .lbl { @apply block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1; }
+    </style>
+    <!-- Plain CSS (same values Tailwind already applies, so the look is unchanged) -->
+    <style>
+        :root {
+            --blue-900: #1e3a8a;
+            --blue-600: #2563eb;
+            --slate-300: #cbd5e1;
+            --slate-500: #64748b;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        .field {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--slate-300);
+        }
+        .field:focus {
+            outline: 2px solid transparent;
+            outline-offset: 2px;
+            border-color: transparent;
+            box-shadow: 0 0 0 2px var(--blue-600);
+        }
+        .lbl {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.75rem;
+            line-height: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--slate-500);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Login View -->
+    <div id="login-view" class="flex flex-col flex-grow min-h-screen">
+        <div class="bg-blue-900 text-white shadow-md">
+            <div class="max-w-6xl mx-auto px-4 py-6">
+                <h1 class="text-2xl font-bold">📚 CCD BTVTeD Sync</h1>
+                <p class="text-blue-200 text-sm">City College of Davao - Bachelor of Technical Vocational Teacher Education Research Repository</p>
+            </div>
+        </div>
+        <div class="flex-grow flex items-center justify-center px-4 py-12">
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200 w-full max-w-md">
+                <div id="login-form">
+                    <h2 class="text-xl font-bold text-blue-900 mb-1">Log In</h2>
+                    <p class="text-sm text-slate-500 mb-6">Sign in to browse the student research repository.</p>
+                    <div id="login-error" class="hidden mb-4 text-sm bg-red-50 text-red-700 border border-red-200 rounded-lg px-4 py-2">Incorrect username or password.</div>
+                    <div class="mb-4"><label class="lbl">Username</label><input type="text" id="login-username" autocomplete="username" class="field" placeholder="Enter your username"></div>
+                    <div class="mb-6"><label class="lbl">Password</label><input type="password" id="login-password" autocomplete="current-password" class="field" placeholder="Enter your password"></div>
+                    <button id="login-btn" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition">Log In</button>
+                    <p class="text-sm text-slate-500 text-center mt-4">No account yet? <button onclick="toggleAuth('signup')" class="text-blue-600 font-medium hover:underline">Sign up</button></p>
+                </div>
+                <div id="signup-form" class="hidden">
+                    <h2 class="text-xl font-bold text-blue-900 mb-1">Create Account</h2>
+                    <p class="text-sm text-slate-500 mb-6">Sign up as a student to upload your research.</p>
+                    <div id="signup-error" class="hidden mb-4 text-sm bg-red-50 text-red-700 border border-red-200 rounded-lg px-4 py-2"></div>
+                    <div class="mb-4"><label class="lbl">Full Name</label><input type="text" id="su-name" class="field" placeholder="Juan Dela Cruz"></div>
+                    <div class="mb-4"><label class="lbl">Username</label><input type="text" id="su-username" autocomplete="username" class="field" placeholder="Choose a username"></div>
+                    <div class="mb-4"><label class="lbl">Password</label><input type="password" id="su-password" autocomplete="new-password" class="field" placeholder="At least 6 characters"></div>
+                    <div class="mb-6"><label class="lbl">Confirm Password</label><input type="password" id="su-confirm" autocomplete="new-password" class="field" placeholder="Re-enter your password"></div>
+                    <button id="signup-btn" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition">Sign Up</button>
+                    <p class="text-sm text-slate-500 text-center mt-4">Already have an account? <button onclick="toggleAuth('login')" class="text-blue-600 font-medium hover:underline">Log in</button></p>
+                </div>
+            </div>
+        </div>
+        <footer class="bg-white border-t border-slate-200 py-6 text-center text-sm text-slate-500">
+            <p>CCD BTVTeD Sync &bull; City College of Davao Student Research Repository</p>
+        </footer>
+    </div>
+
+    <!-- App View (shown after login) -->
+    <div id="app-view" class="hidden flex-col flex-grow min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-blue-900 text-white shadow-md">
+        <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold">📚 CCD BTVTeD Sync</h1>
+                <p class="text-blue-200 text-sm">City College of Davao - Bachelor of Technical Vocational Teacher Education Research Repository</p>
+            </div>
+            <div class="mt-4 md:mt-0 text-sm text-blue-100 flex items-center gap-4">
+                <span>Total Papers Indexed: <span id="paper-count" class="font-bold">0</span></span>
+                <span id="user-label" class="text-blue-200"></span>
+                <button onclick="logout()" class="bg-blue-800 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition">Log Out</button>
+            </div>
+        </div>
+    </header>
+    <nav class="bg-white border-b border-slate-200"><div id="nav-tabs" class="max-w-6xl mx-auto px-4 flex gap-2 text-sm"></div></nav>
+
+    <!-- Main Content -->
+    <main id="view-repo" class="flex-grow max-w-6xl mx-auto px-4 py-8 w-full">
+        
+        <!-- Search & Filters Section -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
+            <div class="flex flex-col md:flex-row gap-4">
+                <!-- Search Input -->
+                <div class="flex-grow">
+                    <input type="text" id="search-input" placeholder="Search by title, keyword, author, or topic..." 
+                        class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent">
+                </div>
+                <!-- Category Filter -->
+                <div class="md:w-64">
+                    <select id="category-filter" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white">
+                        <option value="All">All Disciplines</option>
+                        <option value="Computer Science">Computer Science & IoT</option>
+                        <option value="Agriculture">Agriculture & Poultry</option>
+                        <option value="Environment & Disaster Management">Environment & Disaster Management</option>
+                    </select>
+                </div>
+                <!-- Year Sorter -->
+                <div class="md:w-48">
+                    <select id="year-sort" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white">
+                        <option value="default">Sort by Year</option>
+                        <option value="newest">Newest first</option>
+                        <option value="oldest">Oldest first</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Grid -->
+        <div id="results-container" class="grid grid-cols-1 gap-6">
+            <!-- Dynamic search results will inject here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="no-results" class="hidden text-center py-12">
+            <p class="text-slate-500 text-lg">No research papers found matching your search.</p>
+        </div>
+    </main>
+
+    <!-- Upload View (students) -->
+    <main id="view-submit" class="hidden flex-grow max-w-6xl mx-auto px-4 py-8 w-full">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
+            <h2 class="text-xl font-bold text-blue-900 mb-1">Upload Research</h2>
+            <p class="text-sm text-slate-500 mb-4">Your paper will appear in the repository once an admin approves it.</p>
+            <div id="submit-msg" class="hidden"></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="md:col-span-2"><label class="lbl">Title</label><input id="sub-title" class="field"></div>
+                <div class="md:col-span-2"><label class="lbl">Authors</label><input id="sub-authors" class="field" placeholder="Surname, F. M., Surname, F. M."></div>
+                <div><label class="lbl">Year</label><input id="sub-year" type="number" value="2026" class="field"></div>
+                <div><label class="lbl">Discipline</label>
+                    <select id="sub-category" class="field bg-white">
+                        <option value="Computer Science">Computer Science & IoT</option>
+                        <option value="Agriculture">Agriculture & Poultry</option>
+                        <option value="Environment & Disaster Management">Environment & Disaster Management</option>
+                    </select></div>
+                <div class="md:col-span-2"><label class="lbl">Abstract</label><textarea id="sub-abstract" rows="4" class="field"></textarea></div>
+                <div class="md:col-span-2"><label class="lbl">Documentation (PDF, max 2 MB)</label><input id="sub-file" type="file" accept="application/pdf" class="text-sm"></div>
+            </div>
+            <button onclick="submitResearch()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Submit for Approval</button>
+        </div>
+        <h3 class="text-lg font-bold text-blue-900 mb-3">My Submissions</h3>
+        <div id="my-subs" class="grid grid-cols-1 gap-4"></div>
+    </main>
+
+    <!-- Admin View -->
+    <main id="view-admin" class="hidden flex-grow max-w-6xl mx-auto px-4 py-8 w-full">
+        <h2 class="text-xl font-bold text-blue-900 mb-3">Pending Applications</h2>
+        <div id="pending-list" class="grid grid-cols-1 gap-4 mb-10"></div>
+        <h3 class="text-lg font-bold text-blue-900 mb-3">Reviewed</h3>
+        <div id="reviewed-list" class="grid grid-cols-1 gap-3"></div>
+    </main>
+
+    <!-- View Counter (admin only) -->
+    <main id="view-stats" class="hidden flex-grow max-w-6xl mx-auto px-4 py-8 w-full">
+        <h2 class="text-xl font-bold text-blue-900 mb-1">View Counter</h2>
+        <p class="text-sm text-slate-500 mb-4">How many people have viewed each paper. Visible to admins and to the paper's publisher only.</p>
+        <div id="stats-summary" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"></div>
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+                    <tr><th class="px-4 py-3">Paper</th><th class="px-4 py-3">Publisher</th><th class="px-4 py-3 text-right">Total views</th><th class="px-4 py-3 text-right">Unique viewers</th><th class="px-4 py-3">Last viewed</th></tr>
+                </thead>
+                <tbody id="stats-body"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- PDF/Abstract Modal -->
+    <div id="pdf-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-2xl w-full p-6 shadow-xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+            <h2 id="modal-title" class="text-xl font-bold text-blue-900 mb-2"></h2>
+            <p id="modal-author" class="text-sm text-slate-600 mb-4"></p>
+            <div class="bg-slate-100 p-4 rounded-lg mb-4">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Abstract / Overview</h3>
+                <p id="modal-abstract" class="text-sm text-slate-700 leading-relaxed"></p>
+            </div>
+            <div id="modal-cert" class="mb-4 border-2 border-green-300 bg-green-50 rounded-lg p-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-green-600 text-lg leading-none">&#10004;</span>
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-green-800">Certification of Approved / Defended Paper</h3>
+                </div>
+                <p id="cert-text" class="text-sm text-slate-700 leading-relaxed mb-3"></p>
+                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                    <div><dt class="lbl !mb-0">Status</dt><dd class="font-semibold text-green-700">Approved &amp; Defended</dd></div>
+                    <div><dt class="lbl !mb-0">Certified by</dt><dd id="cert-by" class="text-slate-700"></dd></div>
+                    <div><dt class="lbl !mb-0">Date approved</dt><dd id="cert-date" class="text-slate-700"></dd></div>
+                    <div><dt class="lbl !mb-0">Defense date</dt><dd id="cert-defense" class="text-slate-700"></dd></div>
+                </dl>
+            </div>
+            <div class="mb-6">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Citation (APA)</h3>
+                <div class="flex items-center justify-between bg-slate-50 border border-slate-200 p-3 rounded-lg">
+                    <p id="modal-citation" class="text-xs text-slate-700 font-mono"></p>
+                    <button onclick="copyCitation()" class="ml-2 text-xs bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">Copy</button>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button id="modal-download-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Open Full Documentation</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Research FAQ Chatbot -->
+    <button id="chat-fab" onclick="toggleChat()" class="fixed right-4 z-40 bg-blue-600 text-white rounded-full shadow-lg px-4 py-3 text-sm font-medium hover:bg-blue-700 transition" style="bottom:calc(1rem + env(safe-area-inset-bottom,0px))">💬 Ask a question</button>
+    <div id="chat-panel" class="hidden fixed right-4 z-40 w-[22rem] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-xl border border-slate-200 flex-col overflow-hidden" style="bottom:calc(4.5rem + env(safe-area-inset-bottom,0px));height:32rem;max-height:calc(100vh - 7rem)">
+        <div class="bg-blue-900 text-white px-4 py-3 flex justify-between items-center">
+            <div><p class="font-bold text-sm">Ask a Question</p><p class="text-xs text-blue-200">Systems &amp; innovation FAQs</p></div>
+            <button onclick="toggleChat()" class="text-blue-200 hover:text-white text-xl leading-none" aria-label="Close chat">&times;</button>
+        </div>
+        <div id="chat-log" class="flex-grow overflow-y-auto p-3 space-y-2 bg-slate-50 text-sm"></div>
+        <div id="chat-chips" class="flex flex-wrap gap-1.5 p-2 border-t border-slate-200 overflow-y-auto" style="max-height:6.5rem"></div>
+        <div class="flex gap-2 p-2 border-t border-slate-200">
+            <input id="chat-input" class="field !py-2 text-sm" placeholder="Ask about systems or innovation..." autocomplete="off">
+            <button onclick="sendChat()" class="bg-blue-600 text-white px-3 rounded-lg text-sm font-medium hover:bg-blue-700">Send</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 text-center text-sm text-slate-500">
+        <p>CCD BTVTeD Sync &bull; City College of Davao Student Research Repository</p>
+    </footer>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Updated Research Database with uploaded CCD BTVTeD files
+        const seedPapers = [
+            {
+                id: 1,
+                title: "Automated Drainage Cleaner with Water Level Monitoring and SMS Flood Alert System",
+                authors: "Silongan, M. J. A., Lorenzo, C. S. B., Gamus, E. D. C., Mariposque, C. J. A., Romano, R. C., Masangya, R. A., Maguana, G. E., & Pene, J. A.",
+                year: 2025,
+                category: "Environment & Disaster Management",
+                abstract: "This project study designs and develops an automated drainage cleaner to clear blockages, combined with real-time water level monitoring and a GSM-based SMS flood alert system to mitigate urban flooding and protect vulnerable communities in Davao City[cite: 1].",
+                pdfUrl: "#",
+                citation: "Silongan, M. J. A., et al. (2025). Automated Drainage Cleaner with Water Level Monitoring and SMS Flood Alert System. City College of Davao, Bachelor of Technical Vocational Teacher Education[cite: 1]."
+            },
+            {
+                id: 2,
+                title: "Smart Flood Alert System",
+                authors: "Quibol, P. J. B., Gamboa, J. A. B., Demeterio, B. M. J., Escobarte, L. A. M., Felizarta, R. I. A., Bacurnay, C. P., Batitay, M. S., & Teofilo, J. R.",
+                year: 2025,
+                category: "Environment & Disaster Management",
+                abstract: "An affordable, community-based early warning system designed to detect rising water levels and identify human presence in danger zones using PIR motion detection, audible alarms, and SMS notifications to prevent casualties during flash floods[cite: 2].",
+                pdfUrl: "#",
+                citation: "Quibol, P. J. B., et al. (2025). Smart Flood Alert System. City College of Davao, Bachelor of Technical Vocational Teacher Education[cite: 2]."
+            },
+            {
+                id: 3,
+                title: "Smart Ventilation Control System for Chicken Factories",
+                authors: "Perez, C. J., Petallar, J. P., Quicoy, A. M., Autida, R. M., Drama, A., Baldovi, J., & Onio, G.",
+                year: 2025,
+                category: "Agriculture",
+                abstract: "An IoT-driven agricultural automation project aimed at reducing heat stress and managing air quality (such as ammonia and humidity levels) in poultry housing through automated temperature monitoring and ventilation control[cite: 3].",
+                pdfUrl: "#",
+                citation: "Perez, C. J., et al. (2025). Smart Ventilation Control System for Chicken Factories. City College of Davao, Bachelor of Technical Vocational Teacher Education[cite: 3]."
+            },
+            {
+                id: 4,
+                title: "SmartFish: A Sustainable and Innovative System for Real-Time Water Level Monitoring, Smart Filtration, and Automated Fish Farm Maintenance",
+                authors: "Batucan, M. F. V., Magayo, L. L., Turnos, D. N. L., Pagat, A. K. R., Castillo, M. E., Malanas, D. F. A., Talay, R. F., Corlit, R. R. A., & Flores, H. C.",
+                year: 2025,
+                category: "Agriculture",
+                abstract: "A sustainable aquaculture solution integrating automated water level sensing, smart filtration/recycling mechanisms, and automated feeding to enhance fish yield, reduce water contamination, and modernize traditional fish farming operations.",
+                pdfUrl: "#",
+                citation: "Batucan, M. F. V., et al. (2025). SmartFish: A Sustainable and Innovative System for Real-Time Water Level Monitoring, Smart Filtration, and Automated Fish Farm Maintenance. City College of Davao, Bachelor of Technical Vocational Teacher Education."
+            },
+            {
+                id: 5,
+                title: "pH Level Monitoring System and Drainer for Aquaculture",
+                authors: "Coscos, K. D. M. C., Echavez, C. A. A., Guiang, G. A. O., Concellado, C. J. R., Bermudez, G. P., Alfafara, C. A., Fulguerinas, J. H., & Elivera, C. R.",
+                year: 2025,
+                category: "Agriculture",
+                abstract: "An IoT-based system for fish farms that continuously measures pond water pH with a sensor controlled by an Arduino Uno and shows the reading on an LCD. When pH becomes unsafe, a SIM800L GSM module sends SMS alerts to the owner, and a servo motor opens a gate to drain the water, closing it again once pH returns to normal. The study tests real-time monitoring, sensor accuracy and drainage effectiveness as a low-cost alternative to manual pH testing for small to medium-sized fish farms.",
+                pdfUrl: "#",
+                citation: "Coscos, K. D. M. C., Echavez, C. A. A., Guiang, G. A. O., Concellado, C. J. R., Bermudez, G. P., Alfafara, C. A., Fulguerinas, J. H., & Elivera, C. R. (2025). pH Level Monitoring System and Drainer for Aquaculture. City College of Davao, Bachelor of Technical Vocational Teacher Education."
+            }
+        ];
+
+        let researchPapers = seedPapers.slice();
+
+        const searchInput = document.getElementById('search-input');
+        const categoryFilter = document.getElementById('category-filter');
+        const resultsContainer = document.getElementById('results-container');
+        const noResults = document.getElementById('no-results');
+        const paperCount = document.getElementById('paper-count');
+
+        // Modal Elements
+        const modal = document.getElementById('pdf-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalAuthor = document.getElementById('modal-author');
+        const modalAbstract = document.getElementById('modal-abstract');
+        const modalCitation = document.getElementById('modal-citation');
+        const modalDownloadBtn = document.getElementById('modal-download-btn');
+
+        // Initialize display count
+        paperCount.textContent = researchPapers.length;
+
+        // Render function
+        function displayPapers(papers) {
+            resultsContainer.innerHTML = '';
+            
+            if (papers.length === 0) {
+                noResults.classList.remove('hidden');
+                return;
+            } else {
+                noResults.classList.add('hidden');
+            }
+
+            papers.forEach(paper => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition duration-200 flex flex-col justify-between";
+                
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start gap-4 mb-2">
+                            <span class="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full">${esc(paper.category)}</span>
+                            <span class="text-xs text-slate-400 font-medium">${paper.year}</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-blue-900 hover:text-blue-700 cursor-pointer mb-1" onclick="openModal(${paper.id})">${esc(paper.title)}</h3>
+                        <p class="text-xs text-slate-600 mb-3 font-medium">By ${esc(paper.authors)}</p>
+                        ${viewChip(paper.id, paper.publisher)}
+                        <p class="text-sm text-slate-600 line-clamp-2 mb-4">${esc(paper.abstract)}</p>
+                    </div>
+                    <div class="flex items-center justify-between border-t border-slate-100 pt-4 mt-2">
+                        <button onclick="openModal(${paper.id})" class="text-xs font-medium text-blue-600 hover:underline">View Abstract & Citation</button>
+                        <button onclick="openFile(${paper.id})" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition">Download Documentation</button>
+                    </div>
+                `;
+                resultsContainer.appendChild(card);
+            });
+        }
+
+        // Filter Logic
+        function filterPapers() {
+            const query = searchInput.value.toLowerCase();
+            const selectedCategory = categoryFilter.value;
+
+            const filtered = researchPapers.filter(paper => {
+                const matchesSearch = paper.title.toLowerCase().includes(query) || 
+                                      paper.authors.toLowerCase().includes(query) || 
+                                      paper.abstract.toLowerCase().includes(query);
+                
+                const matchesCategory = selectedCategory === 'All' || paper.category === selectedCategory;
+
+                return matchesSearch && matchesCategory;
+            });
+
+            const order = document.getElementById('year-sort').value;
+            if (order === 'newest') filtered.sort((a, b) => b.year - a.year);
+            else if (order === 'oldest') filtered.sort((a, b) => a.year - b.year);
+
+            displayPapers(filtered);
+        }
+
+        // Modal Functions
+        function openModal(id) {
+            const paper = researchPapers.find(p => p.id === id);
+            if (!paper) return;
+
+            modalTitle.textContent = paper.title;
+            modalAuthor.textContent = `By ${paper.authors} (${paper.year}) - ${paper.category}`;
+            modalAbstract.textContent = paper.abstract;
+            modalCitation.textContent = paper.citation;
+            // Certification of approved / defended paper (only approved papers ever reach the repository)
+            const fmtDate = d => { if (!d) return null; const t = new Date(d.length === 10 ? d + 'T00:00:00' : d); return isNaN(t) ? null : t.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }); };
+            document.getElementById('cert-text').textContent = `This is to certify that the research paper “${paper.title}” has been reviewed, approved, and successfully defended, and is accepted into the City College of Davao BTVTeD Research Repository.`;
+            document.getElementById('cert-by').textContent = paper.approvedBy ? paper.approvedBy + ' (Admin)' : 'City College of Davao – BTVTeD Program';
+            document.getElementById('cert-date').textContent = fmtDate(paper.approvedDate) || ('Academic year ' + paper.year);
+            document.getElementById('cert-defense').textContent = fmtDate(paper.defenseDate) || 'Not recorded';
+            modalDownloadBtn.onclick = () => openFile(paper.id);
+            recordView(paper.id, paper.publisher);
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        function copyCitation() {
+            navigator.clipboard.writeText(modalCitation.textContent);
+            alert("Citation copied to clipboard!");
+        }
+
+        // Event Listeners
+        searchInput.addEventListener('input', filterPapers);
+        categoryFilter.addEventListener('change', filterPapers);
+        document.getElementById('year-sort').addEventListener('change', filterPapers);
+
+        // ---------- Storage & helpers ----------
+        // NOTE: everything is saved in this browser only (localStorage).
+        const store = {
+            get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+            set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+        };
+        const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const el = id => document.getElementById(id);
+        const getSubs = () => store.get('ccdSubs', []);
+        function getUsers() {
+            let u = store.get('ccdUsers', null);
+            if (!u) {
+                u = [{ username: 'admin', password: 'ccd2025', name: 'Admin', role: 'admin' },
+                     { username: 'student', password: 'btvted', name: 'Student', role: 'student' }];
+                store.set('ccdUsers', u);
+            }
+            return u;
+        }
+        let currentUser = null;
+
+        function refreshPapers() {
+            const approved = getSubs().filter(x => x.status === 'approved').map(x => ({
+                id: x.id, title: x.title, authors: x.authors, year: x.year, category: x.category, abstract: x.abstract, publisher: x.submittedBy,
+                approvedBy: x.approvedBy, approvedDate: x.approvedDate, defenseDate: x.defenseDate,
+                citation: `${x.authors} (${x.year}). ${x.title}. City College of Davao, Bachelor of Technical Vocational Teacher Education.`
+            }));
+            researchPapers = seedPapers.concat(approved);
+            paperCount.textContent = researchPapers.length;
+            filterPapers();
+        }
+
+        function openFile(id) {
+            const x = getSubs().find(v => v.id === id);
+            if (!x || !x.fileData) { alert('No file is attached to this paper yet.'); return; }
+            recordView(x.id, x.submittedBy);
+            const bin = atob(x.fileData.split(',')[1]);
+            const arr = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+            window.open(URL.createObjectURL(new Blob([arr], { type: 'application/pdf' })), '_blank');
+        }
+
+        // ---------- View counter ----------
+        // Stored per paper: { total, viewers: {username: count}, last }.
+        // A view = a signed-in user opening a paper's details or file (counted once per user per paper per session).
+        // Admins and the paper's own publisher are not counted, so nobody inflates their own numbers.
+        const getViews = () => store.get('ccdViews', {});
+        function recordView(id, publisher) {
+            if (!currentUser || currentUser.role === 'admin' || currentUser.username === publisher) return;
+            const key = `ccdSeen:${currentUser.username}:${id}`;
+            try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch (e) {}
+            const all = getViews();
+            const v = all[id] || { total: 0, viewers: {}, last: null };
+            v.total++;
+            v.viewers[currentUser.username] = (v.viewers[currentUser.username] || 0) + 1;
+            v.last = new Date().toISOString();
+            all[id] = v;
+            store.set('ccdViews', all);
+        }
+        // Only admins, or the publisher of that specific paper, may see its count.
+        const canSeeViews = publisher => !!currentUser && (currentUser.role === 'admin' || (!!publisher && publisher === currentUser.username));
+        function viewChip(id, publisher) {
+            if (!canSeeViews(publisher)) return '';
+            const n = (getViews()[id] || {}).total || 0;
+            return `<p class="inline-flex items-center gap-1 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-2.5 py-1 mb-3">${n} view${n === 1 ? '' : 's'}</p>`;
+        }
+        function renderStats() {
+            if (!currentUser || currentUser.role !== 'admin') return;
+            const views = getViews();
+            const rows = researchPapers.map(p => {
+                const v = views[p.id] || { total: 0, viewers: {}, last: null };
+                return { p, total: v.total, uniq: Object.keys(v.viewers).length, last: v.last };
+            }).sort((a, b) => b.total - a.total);
+            const total = rows.reduce((n, r) => n + r.total, 0);
+            const stat = (label, val) => `<div class="${card}"><p class="lbl !mb-0">${label}</p><p class="text-2xl font-bold text-blue-900 mt-1">${val}</p></div>`;
+            el('stats-summary').innerHTML = stat('Total views', total) + stat('Papers viewed', rows.filter(r => r.total).length + ' / ' + rows.length) +
+                stat('Most viewed', rows[0] && rows[0].total ? esc(rows[0].p.title.slice(0, 40)) + (rows[0].p.title.length > 40 ? '…' : '') : '—');
+            el('stats-body').innerHTML = rows.map(r => `
+                <tr class="border-t border-slate-100">
+                    <td class="px-4 py-3 font-medium text-blue-900">${esc(r.p.title)}</td>
+                    <td class="px-4 py-3 text-slate-600">${r.p.publisher ? '@' + esc(r.p.publisher) : 'CCD (seed)'}</td>
+                    <td class="px-4 py-3 text-right font-semibold">${r.total}</td>
+                    <td class="px-4 py-3 text-right">${r.uniq}</td>
+                    <td class="px-4 py-3 text-slate-500">${r.last ? new Date(r.last).toLocaleString() : '—'}</td>
+                </tr>`).join('');
+        }
+
+        // ---------- Views & navigation ----------
+        const viewIds = { repo: 'view-repo', submit: 'view-submit', admin: 'view-admin', stats: 'view-stats' };
+        function showView(name) {
+            Object.entries(viewIds).forEach(([k, id]) => el(id).classList.toggle('hidden', k !== name));
+            if (name === 'submit') renderMine();
+            if (name === 'admin') renderAdmin();
+            if (name === 'stats' && currentUser && currentUser.role === 'admin') renderStats();
+            renderNav(name);
+        }
+        function renderNav(active) {
+            const pending = getSubs().filter(x => x.status === 'pending').length;
+            const tabs = [['repo', 'Repository']];
+            if (currentUser.role === 'admin') {
+                tabs.push(['admin', 'Pending Applications' + (pending ? ` (${pending})` : '')]);
+                tabs.push(['stats', 'View Counter']);
+            } else tabs.push(['submit', 'Upload Research']);
+            el('nav-tabs').innerHTML = tabs.map(([k, l]) =>
+                `<button onclick="showView('${k}')" class="px-4 py-3 font-medium border-b-2 ${k === active ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700'}">${l}</button>`).join('');
+        }
+        const badge = st => ({ pending: 'bg-amber-50 text-amber-700', approved: 'bg-green-50 text-green-700', rejected: 'bg-red-50 text-red-700' }[st]);
+        const card = 'bg-white p-5 rounded-xl shadow-sm border border-slate-200';
+
+        // ---------- Student: upload ----------
+        function submitResearch() {
+            const msg = el('submit-msg');
+            const say = (t, ok) => { msg.textContent = t; msg.className = 'mb-4 text-sm rounded-lg px-4 py-2 border ' + (ok ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'); };
+            const title = el('sub-title').value.trim(), authors = el('sub-authors').value.trim(),
+                  abstract = el('sub-abstract').value.trim(), file = el('sub-file').files[0];
+            if (!title || !authors || !abstract || !file) return say('Please fill in all fields and attach a PDF.', false);
+            if (file.type !== 'application/pdf') return say('Only PDF files are allowed.', false);
+            if (file.size > 2 * 1024 * 1024) return say('File is too large (max 2 MB).', false);
+            const reader = new FileReader();
+            reader.onload = () => {
+                const subs = getSubs();
+                subs.push({ id: Date.now(), title, authors, abstract, year: parseInt(el('sub-year').value) || 2026,
+                    category: el('sub-category').value, fileName: file.name, fileData: reader.result,
+                    submittedBy: currentUser.username, status: 'pending', note: '', date: new Date().toLocaleDateString() });
+                if (!store.set('ccdSubs', subs)) return say('Browser storage is full. Try a smaller file.', false);
+                ['sub-title', 'sub-authors', 'sub-abstract', 'sub-file'].forEach(i => el(i).value = '');
+                say('Submitted! Your paper is now waiting for admin approval.', true);
+                renderMine(); renderNav('submit');
+            };
+            reader.readAsDataURL(file);
+        }
+        function renderMine() {
+            const mine = getSubs().filter(x => x.submittedBy === currentUser.username).reverse();
+            el('my-subs').innerHTML = mine.length ? mine.map(x => `
+                <div class="${card}">
+                    <div class="flex justify-between items-start gap-4">
+                        <h4 class="font-bold text-blue-900">${esc(x.title)}</h4>
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${badge(x.status)}">${x.status}</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">Submitted ${esc(x.date)} &bull; ${esc(x.fileName)}</p>
+                    ${x.status === 'approved' ? viewChip(x.id, x.submittedBy) : ''}
+                    ${x.note ? `<p class="text-sm text-slate-600 mt-2">Admin note: ${esc(x.note)}</p>` : ''}
+                </div>`).join('') : '<p class="text-slate-500 text-sm">You have not submitted anything yet.</p>';
+        }
+
+        // ---------- Admin: review ----------
+        function renderAdmin() {
+            const subs = getSubs().slice().reverse();
+            const pending = subs.filter(x => x.status === 'pending');
+            el('pending-list').innerHTML = pending.length ? pending.map(x => `
+                <div class="${card}">
+                    <div class="flex justify-between items-start gap-4 mb-1">
+                        <span class="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full">${esc(x.category)}</span>
+                        <span class="text-xs text-slate-400">${x.year}</span>
+                    </div>
+                    <h4 class="text-lg font-bold text-blue-900">${esc(x.title)}</h4>
+                    <p class="text-xs text-slate-600 font-medium mb-2">By ${esc(x.authors)} &bull; uploaded by @${esc(x.submittedBy)} on ${esc(x.date)}</p>
+                    <p class="text-sm text-slate-600 mb-3">${esc(x.abstract)}</p>
+                    <button onclick="openFile(${x.id})" class="text-xs text-blue-600 hover:underline font-medium mb-3">View file: ${esc(x.fileName)}</button>
+                    <div class="flex flex-col md:flex-row gap-3 border-t border-slate-100 pt-4">
+                        <input id="note-${x.id}" class="field !py-2 text-sm" placeholder="Optional note to the student">
+                        <label class="text-xs text-slate-500 self-center whitespace-nowrap">Defense date</label>
+                        <input id="def-${x.id}" type="date" class="field !py-2 text-sm md:max-w-[11rem]" title="Defense date (optional)">
+                        <button onclick="decide(${x.id}, 'approved')" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700">Approve</button>
+                        <button onclick="decide(${x.id}, 'rejected')" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700">Reject</button>
+                    </div>
+                </div>`).join('') : '<p class="text-slate-500 text-sm">No pending applications.</p>';
+            const done = subs.filter(x => x.status !== 'pending');
+            el('reviewed-list').innerHTML = done.length ? done.map(x => `
+                <div class="${card} flex justify-between items-center gap-4">
+                    <div><p class="font-medium text-blue-900 text-sm">${esc(x.title)}</p>
+                    <p class="text-xs text-slate-500">@${esc(x.submittedBy)}${x.note ? ' &bull; ' + esc(x.note) : ''}</p></div>
+                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${badge(x.status)}">${x.status}</span>
+                </div>`).join('') : '<p class="text-slate-500 text-sm">Nothing reviewed yet.</p>';
+        }
+        function decide(id, status) {
+            const subs = getSubs(), x = subs.find(v => v.id === id);
+            if (!x) return;
+            x.status = status;
+            const n = el('note-' + id); x.note = n ? n.value.trim() : '';
+            if (status === 'approved') {
+                x.approvedBy = currentUser.name; x.approvedDate = new Date().toISOString();
+                const d = el('def-' + id); x.defenseDate = d ? d.value : '';
+            }
+            store.set('ccdSubs', subs);
+            refreshPapers(); renderAdmin(); renderNav('admin');
+        }
+
+        // ---------- Login / Sign up ----------
+        function showApp(user) {
+            currentUser = user;
+            el('user-label').textContent = `${user.name} (${user.role})`;
+            el('login-view').classList.replace('flex', 'hidden');
+            el('app-view').classList.replace('hidden', 'flex');
+            refreshPapers(); showView('repo');
+        }
+        function toggleAuth(mode) {
+            el('login-form').classList.toggle('hidden', mode !== 'login');
+            el('signup-form').classList.toggle('hidden', mode !== 'signup');
+            el('login-error').classList.add('hidden'); el('signup-error').classList.add('hidden');
+        }
+        function startSession(user) {
+            try { sessionStorage.setItem('ccdUser', user.username); } catch (e) {}
+            showApp(user);
+        }
+        function login() {
+            const user = getUsers().find(u => u.username === el('login-username').value.trim().toLowerCase() && u.password === el('login-password').value);
+            if (!user) return el('login-error').classList.remove('hidden');
+            el('login-error').classList.add('hidden');
+            startSession(user);
+        }
+        function signup() {
+            const name = el('su-name').value.trim(), username = el('su-username').value.trim().toLowerCase(),
+                  pw = el('su-password').value, err = el('signup-error');
+            const fail = t => { err.textContent = t; err.classList.remove('hidden'); };
+            if (!name || !username || !pw) return fail('Please fill in all fields.');
+            if (pw.length < 6) return fail('Password must be at least 6 characters.');
+            if (pw !== el('su-confirm').value) return fail('Passwords do not match.');
+            const users = getUsers();
+            if (users.some(u => u.username === username)) return fail('That username is already taken.');
+            const user = { username, password: pw, name, role: 'student' };
+            users.push(user);
+            if (!store.set('ccdUsers', users)) return fail('Could not save your account (browser storage unavailable).');
+            err.classList.add('hidden');
+            startSession(user);
+        }
+        function logout() {
+            try { sessionStorage.removeItem('ccdUser'); } catch (e) {}
+            currentUser = null;
+            el('app-view').classList.replace('flex', 'hidden');
+            el('login-view').classList.replace('hidden', 'flex');
+            el('login-password').value = '';
+            toggleAuth('login');
+        }
+        el('login-btn').addEventListener('click', login);
+        el('signup-btn').addEventListener('click', signup);
+        ['login-username', 'login-password'].forEach(i => el(i).addEventListener('keydown', e => { if (e.key === 'Enter') login(); }));
+        ['su-name', 'su-username', 'su-password', 'su-confirm'].forEach(i => el(i).addEventListener('keydown', e => { if (e.key === 'Enter') signup(); }));
+
+        // Restore session on reload
+        try {
+            const saved = sessionStorage.getItem('ccdUser');
+            const u = saved && getUsers().find(v => v.username === saved.toLowerCase());
+            if (u) showApp(u);
+        } catch (e) {}
+
+        // ---------- Research FAQ chatbot (keyword matching, runs fully in the browser) ----------
+        const faqs = [
+            { q: "What is an IoT system?", k: ["iot", "internet of things", "what is a system", "smart system"],
+              a: "An IoT system connects sensors and devices to a controller that processes the data and can send it over the internet or a mobile network. Typical parts: sensors (input), a microcontroller such as Arduino or ESP32 (brain), outputs like an LCD, buzzer, servo or relay, and communication such as Wi-Fi or GSM." },
+            { q: "What is the difference between innovation, invention and prototype?", k: ["innovation", "invention", "prototype", "difference", "inventor"],
+              a: "An invention is something new. An innovation is a new or improved solution that is put to real use and solves a real problem. A prototype is the first working model you build and test before improving it. Most student projects are innovations: they combine existing parts in a new way for a specific need." },
+            { q: "Which microcontroller should I use?", k: ["arduino", "esp32", "esp8266", "microcontroller", "raspberry", "board", "uno"],
+              a: "Arduino Uno is easy to learn and good for simple sensing and control. ESP32 or ESP8266 add built-in Wi-Fi, which suits dashboards and apps like Blynk or ThingSpeak. Raspberry Pi suits camera or AI projects but costs more and needs more power. Pick the cheapest board that has enough pins and the connectivity you need." },
+            { q: "How do I choose the right sensor?", k: ["sensor", "choose component", "which component", "specs", "accuracy", "datasheet"],
+              a: "Check what it measures and its range, accuracy, operating voltage (3.3 V or 5 V), output type (analog or digital), price and whether it is waterproof if needed. Read the datasheet and look for an Arduino example before buying, and make sure it is available locally." },
+            { q: "How do I calibrate a sensor?", k: ["calibrat", "ph sensor", "accurate reading", "inaccurate", "reading wrong"],
+              a: "Compare the sensor with known reference values. For a pH probe, use buffer solutions (commonly pH 4, 7 and 10), adjust your code or module until it reads each correctly, rinse the probe between solutions, and recalibrate regularly. Keep sensors clean, since dirt causes drift." },
+            { q: "How do I send SMS alerts?", k: ["sms", "gsm", "sim800", "text message", "alert", "notification", "sim card"],
+              a: "Use a GSM module such as the SIM800L with an active SIM card that has load and signal. Control it from the Arduino with AT commands over serial. Power it from a stable supply of about 4 V that can deliver short bursts of up to 2 A, not directly from the Arduino\u2019s 5 V pin, and keep a common ground." },
+            { q: "How do I connect to a mobile app or dashboard?", k: ["app", "dashboard", "blynk", "thingspeak", "wifi", "wi-fi", "remote", "cloud", "online"],
+              a: "Use a Wi-Fi capable board (ESP32/ESP8266) and a platform like Blynk or ThingSpeak: the board sends readings to the cloud, and the app or web dashboard shows them in real time. Remember this needs internet access, so SMS or GSM is the better backup in remote areas." },
+            { q: "How do I control a gate, valve or pump?", k: ["servo", "gate", "valve", "pump", "relay", "motor", "drain", "actuator"],
+              a: "A servo is fine for light gates. For heavier loads or water pressure use a relay or motor driver with a pump or solenoid valve. Power motors from a separate supply, share the ground with the microcontroller, and add a limit or manual override so the gate never jams." },
+            { q: "How do I power my system and add a backup?", k: ["power", "battery", "backup", "outage", "solar", "voltage", "supply", "charger"],
+              a: "Add up the current of all parts, choose a supply with some extra capacity, and match the voltage each part needs. For power cuts add a battery pack or power bank, and consider a small solar panel with a charge controller for remote sites. Never exceed a component\u2019s rated voltage." },
+            { q: "How do I protect electronics from water and weather?", k: ["waterproof", "protect", "enclosure", "box", "rain", "weather", "splash", "moisture", "safety"],
+              a: "Put the controller and wiring in a sealed project box, keep it elevated and away from the water, route cables through glands or sealed holes, and use waterproof connectors and electrical tape or heat-shrink on joints. Only the sensor tip should touch the water. Test during wet weather." },
+            { q: "How do I test and troubleshoot my prototype?", k: ["test", "troubleshoot", "debug", "not working", "error", "problem", "fix", "serial monitor", "multimeter"],
+              a: "Test one module at a time (sensor, display, GSM, servo) before combining them. Use the Serial Monitor to print values, a multimeter to check voltage and continuity, and check the usual causes first: loose wires, missing common ground, wrong pin numbers and weak power. Record your trials and results for your paper." },
+            { q: "How do I make a concept design and exploded view?", k: ["concept design", "design", "3d", "tinkercad", "exploded", "diagram", "circuit", "schematic", "model"],
+              a: "Sketch the layout first, then model it in a free tool like Tinkercad (it also simulates Arduino circuits). The exploded view separates the parts and labels them with numbers and a legend. Add a circuit diagram showing how the pins are wired." },
+            { q: "How do I draw the process flow?", k: ["process flow", "flowchart", "flow", "existing process", "new process"],
+              a: "Show the existing process with its problems, then your new process step by step in boxes joined by arrows. For a monitoring system, a typical flow is: sensor measures, controller checks the threshold, LCD warns, SMS alert is sent, then the actuator responds." },
+            { q: "How do I make my project different from existing ones?", k: ["original", "unique", "different", "novelty", "existing project", "improve", "compare", "gap"],
+              a: "Search patents and past studies, then compare them in a features matrix. Your edge can be a lower cost, a simpler design, local suitability, a new combination of features or better reliability. State the difference clearly in your synthesis." },
+            { q: "How can I keep the cost low?", k: ["cost", "budget", "cheap", "price", "expensive", "materials", "supplies", "afford"],
+              a: "Reuse containers and spare parts, buy only the modules you need, compare local and online prices, and build a simple version first before adding features. Record every item\u2019s quantity, unit price and total in a costing table with a final total." },
+            { q: "What should I include for maintenance and limitations?", k: ["maintenance", "limitation", "capabilit", "lifespan", "care"],
+              a: "List what the system can do, then honest limits such as power loss, no signal or load on the SIM, dirty sensors or the strength of the servo. For maintenance, include checking wires, recalibrating sensors, recharging or replacing batteries and topping up SMS load." },
+            { q: "How do I upload my project paper here?", k: ["upload", "submit", "pdf", "approve", "approval", "pending", "rejected", "status"],
+              a: "Log in with a student account, open Upload Research, fill in the details, attach your PDF (max 2 MB) and submit. An admin reviews it, and it appears in the repository once approved. Track it under My Submissions." },
+            { q: "Where can I see example projects?", k: ["sample", "example", "previous", "past", "repository", "browse", "similar project"],
+              a: "Open the Repository tab and search by keyword, such as flood, poultry or fish, to see existing systems. Each paper\u2019s details show its abstract and citation, which helps you see how similar projects were built and described." }
+        ];
+        const chatLog = el('chat-log');
+        let chatReady = false;
+        function chatAdd(text, who) {
+            const d = document.createElement('div');
+            d.className = who === 'me' ? 'flex justify-end' : 'flex justify-start';
+            const b = document.createElement('div');
+            b.className = 'max-w-[85%] px-3 py-2 rounded-lg ' + (who === 'me' ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-700');
+            b.style.whiteSpace = 'pre-line';
+            b.textContent = text;
+            d.appendChild(b); chatLog.appendChild(d);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+        function chatAnswer(text) {
+            const t = text.toLowerCase();
+            if (/^(hi|hello|hey|good (morning|afternoon|evening))\b/.test(t)) return 'Hello! Ask me anything about building systems and innovations, or tap one of the questions below.';
+            if (/^(thanks|thank you)/.test(t)) return 'You’re welcome! Good luck with your project.';
+            let best = null, top = 0;
+            faqs.forEach(f => {
+                const s = f.k.reduce((n, w) => n + (t.includes(w) ? (w.length > 5 ? 2 : 1) : 0), 0);
+                if (s > top) { top = s; best = f; }
+            });
+            return best ? best.a : 'I’m not sure about that one. Try rewording it, tap one of the questions below, or ask your adviser for anything specific to your project or school.';
+        }
+        function sendChat(preset) {
+            const input = el('chat-input'), text = (typeof preset === 'string' ? preset : input.value).trim();
+            if (!text) return;
+            input.value = '';
+            chatAdd(text, 'me');
+            setTimeout(() => chatAdd(chatAnswer(text), 'bot'), 250);
+        }
+        function toggleChat() {
+            const p = el('chat-panel'), open = p.classList.contains('hidden');
+            p.classList.toggle('hidden', !open); p.classList.toggle('flex', open);
+            if (open && !chatReady) {
+                chatReady = true;
+                chatAdd('Hi! Ask me a question about systems and innovation projects. Tap one below or type your own.', 'bot');
+                el('chat-chips').innerHTML = faqs.map((f, i) =>
+                    `<button onclick="sendChat(faqs[${i}].q)" class="text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2.5 py-1 hover:bg-blue-100 text-left">${esc(f.q)}</button>`).join('');
+            }
+            if (open) el('chat-input').focus();
+        }
+        el('chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+
+        // Initial Load
+        displayPapers(researchPapers);
+    </script>
+</body>
+</html>
