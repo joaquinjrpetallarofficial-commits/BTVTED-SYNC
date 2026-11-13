@@ -284,7 +284,9 @@
             }
 
             papers.forEach(paper => {
-                const card = document.createElement('div');
+                    const submission = getSubs().find(item => item.id === paper.id && item.fileData);
+                    const hasDocument = !!submission || !!(paper.pdfUrl && paper.pdfUrl !== '#');
+                    const card = document.createElement('div');
                 card.className = "bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition duration-200 flex flex-col justify-between";
                 
                 card.innerHTML = `
@@ -300,7 +302,9 @@
                     </div>
                     <div class="flex items-center justify-between border-t border-slate-100 pt-4 mt-2">
                         <button onclick="openModal(${paper.id})" class="text-xs font-medium text-blue-600 hover:underline">View Abstract & Citation</button>
-                        <button onclick="openFile(${paper.id})" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition">Download Documentation</button>
+                        ${hasDocument
+                            ? `<button onclick="openFile(${paper.id})" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition">Open Documentation</button>`
+                            : '<span class="text-xs text-slate-400">No document attached</span>'}
                     </div>
                 `;
                 resultsContainer.appendChild(card);
@@ -345,6 +349,12 @@
             document.getElementById('cert-date').textContent = fmtDate(paper.approvedDate) || ('Academic year ' + paper.year);
             document.getElementById('cert-defense').textContent = fmtDate(paper.defenseDate) || 'Not recorded';
             modalDownloadBtn.onclick = () => openFile(paper.id);
+            const hasDocument = getSubs().some(item => item.id === paper.id && item.fileData) ||
+                !!(paper.pdfUrl && paper.pdfUrl !== '#');
+            modalDownloadBtn.disabled = !hasDocument;
+            modalDownloadBtn.textContent = hasDocument ? 'Open Full Documentation' : 'No document attached';
+            modalDownloadBtn.classList.toggle('opacity-50', !hasDocument);
+            modalDownloadBtn.classList.toggle('cursor-not-allowed', !hasDocument);
             recordView(paper.id, paper.publisher);
 
             modal.classList.remove('hidden');
@@ -399,12 +409,20 @@
 
         function openFile(id) {
             const x = getSubs().find(v => v.id === id);
-            if (!x || !x.fileData) { alert('No file is attached to this paper yet.'); return; }
-            recordView(x.id, x.submittedBy);
-            const bin = atob(x.fileData.split(',')[1]);
-            const arr = new Uint8Array(bin.length);
-            for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-            window.open(URL.createObjectURL(new Blob([arr], { type: 'application/pdf' })), '_blank');
+            if (x && x.fileData) {
+                recordView(x.id, x.submittedBy);
+                const bin = atob(x.fileData.split(',')[1]);
+                const arr = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+                window.open(URL.createObjectURL(new Blob([arr], { type: 'application/pdf' })), '_blank', 'noopener');
+                return;
+            }
+            const paper = researchPapers.find(v => v.id === id);
+            if (paper && paper.pdfUrl && paper.pdfUrl !== '#') {
+                window.open(paper.pdfUrl, '_blank', 'noopener');
+                return;
+            }
+            alert('No file is attached to this paper yet.');
         }
 
         // ---------- View counter ----------
