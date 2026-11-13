@@ -57,8 +57,9 @@
             <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200 w-full max-w-md">
                 <div id="login-form">
                     <h2 class="text-xl font-bold text-blue-900 mb-1">Log In</h2>
-                    <p class="text-sm text-slate-500 mb-6">Sign in to browse the student research repository.</p>
+                    <p class="text-sm text-slate-500 mb-6">Sign in to browse the student research repository. Admin accounts must be created by a repository administrator.</p>
                     <div id="login-error" class="hidden mb-4 text-sm bg-red-50 text-red-700 border border-red-200 rounded-lg px-4 py-2">Incorrect username or password.</div>
+                    <div class="mb-4"><label class="lbl" for="login-role">Account type</label><select id="login-role" class="field bg-white"><option value="student">Student</option><option value="admin">Administrator</option></select></div>
                     <div class="mb-4"><label class="lbl">Username</label><input type="text" id="login-username" autocomplete="username" class="field" placeholder="Enter your username"></div>
                     <div class="mb-6"><label class="lbl">Password</label><input type="password" id="login-password" autocomplete="current-password" class="field" placeholder="Enter your password"></div>
                     <button id="login-btn" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition">Log In</button>
@@ -72,10 +73,26 @@
                     <div class="mb-4"><label class="lbl">Username</label><input type="text" id="su-username" autocomplete="username" class="field" placeholder="Choose a username"></div>
                     <div class="mb-4"><label class="lbl">Password</label><input type="password" id="su-password" autocomplete="new-password" class="field" placeholder="At least 6 characters"></div>
                     <div class="mb-6"><label class="lbl">Confirm Password</label><input type="password" id="su-confirm" autocomplete="new-password" class="field" placeholder="Re-enter your password"></div>
+                    <div class="mb-6">
+                        <div class="flex items-start gap-2 text-sm text-slate-600">
+                            <input id="su-consent" type="checkbox" class="mt-1 accent-blue-600">
+                            <div><label for="su-consent">I have read and agree to the</label> <button type="button" onclick="openPolicy('terms')" class="text-blue-600 underline">Terms and Conditions</button> and <button type="button" onclick="openPolicy('privacy')" class="text-blue-600 underline">Privacy Policy</button>.</div>
+                        </div>
+                    </div>
                     <button id="signup-btn" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition">Sign Up</button>
                     <p class="text-sm text-slate-500 text-center mt-4">Already have an account? <button onclick="toggleAuth('login')" class="text-blue-600 font-medium hover:underline">Log in</button></p>
                 </div>
             </div>
+        </div>
+        <div id="policy-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 justify-center items-center p-4 z-50" role="dialog" aria-modal="true" aria-labelledby="policy-title">
+            <section class="bg-white rounded-xl max-w-2xl w-full p-6 shadow-xl max-h-[85vh] overflow-y-auto">
+                <div class="flex items-start justify-between gap-4 mb-4">
+                    <h2 id="policy-title" class="text-xl font-bold text-blue-900"></h2>
+                    <button type="button" onclick="closePolicy()" class="text-slate-400 hover:text-slate-600 font-bold text-xl" aria-label="Close policy">&times;</button>
+                </div>
+                <div id="policy-content" class="text-sm text-slate-700 leading-relaxed space-y-3"></div>
+                <button type="button" onclick="closePolicy()" class="mt-6 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Close</button>
+            </section>
         </div>
         <footer class="bg-white border-t border-slate-200 py-6 text-center text-sm text-slate-500">
             <p>CCD BTVTeD Sync &bull; City College of Davao Student Research Repository</p>
@@ -616,13 +633,52 @@
             el('login-form').classList.toggle('hidden', mode !== 'login');
             el('signup-form').classList.toggle('hidden', mode !== 'signup');
             el('login-error').classList.add('hidden'); el('signup-error').classList.add('hidden');
+            if (mode === 'signup') el('su-consent').checked = false;
+        }
+        const policyVersion = '2026-11-13';
+        const policyContent = {
+            terms: {
+                title: 'Terms and Conditions',
+                paragraphs: [
+                    'CCD BTVTeD Sync is a student research repository prototype for browsing sample research and submitting papers for review. Use it lawfully and provide accurate information. Do not upload material you do not have permission to share, or information that should remain confidential.',
+                    'Submissions are pending until an administrator reviews them. Approval in this prototype is not an official academic certification. Do not rely on its browser-only login, roles, view counts, or storage for security or official records.',
+                    'This prototype stores account details, submissions, and uploaded PDFs in this browser only. Data does not sync to the college or across devices and may be lost if browser storage is cleared. Do not reuse a real password or submit sensitive personal information.',
+                    'The repository is provided as-is for demonstration. The college or program should review and replace these draft terms before public or institutional use.'
+                ]
+            },
+            privacy: {
+                title: 'Privacy Policy',
+                paragraphs: [
+                    'This draft policy applies to the browser-based prototype. During signup it records your name, username, and password in this browser’s local storage. When you submit a paper it also stores the paper details, submission status, and an attached PDF (up to 2 MB). The prototype may store view counts and a record of your acceptance of these terms and this policy.',
+                    'The data is used only by the prototype to sign in, display submissions, support review screens, and record consent. It is not sent to a server by this version of the app. Anyone with access to this browser profile may be able to inspect or change locally stored data; passwords are not protected by a production authentication service.',
+                    'Data remains in this browser until removed from the application’s local storage or browser data. To clear it, remove this site’s local storage in your browser settings. This also permanently removes saved accounts, papers, and consent records from that browser.',
+                    'Before real deployment, the responsible institution must identify its data controller and contact, lawful basis, retention periods, user rights process, and any processors or hosting providers. This draft is not legal advice and must be reviewed and completed by the institution.'
+                ]
+            }
+        };
+        function openPolicy(type) {
+            const policy = policyContent[type];
+            if (!policy) return;
+            el('policy-title').textContent = policy.title;
+            el('policy-content').replaceChildren(...policy.paragraphs.map(text => {
+                const p = document.createElement('p');
+                p.textContent = text;
+                return p;
+            }));
+            el('policy-modal').classList.remove('hidden');
+            el('policy-modal').classList.add('flex');
+        }
+        function closePolicy() {
+            el('policy-modal').classList.add('hidden');
+            el('policy-modal').classList.remove('flex');
         }
         function startSession(user) {
             try { sessionStorage.setItem('ccdUser', user.username); } catch (e) {}
             showApp(user);
         }
         function login() {
-            const user = getUsers().find(u => u.username === el('login-username').value.trim().toLowerCase() && u.password === el('login-password').value);
+            const user = getUsers().find(u => u.username === el('login-username').value.trim().toLowerCase() &&
+                u.password === el('login-password').value && u.role === el('login-role').value);
             if (!user) return el('login-error').classList.remove('hidden');
             el('login-error').classList.add('hidden');
             startSession(user);
@@ -632,11 +688,16 @@
                   pw = el('su-password').value, err = el('signup-error');
             const fail = t => { err.textContent = t; err.classList.remove('hidden'); };
             if (!name || !username || !pw) return fail('Please fill in all fields.');
+            if (!el('su-consent').checked) return fail('Please read and accept the Terms and Conditions and Privacy Policy to create an account.');
             if (pw.length < 6) return fail('Password must be at least 6 characters.');
             if (pw !== el('su-confirm').value) return fail('Passwords do not match.');
             const users = getUsers();
             if (users.some(u => u.username === username)) return fail('That username is already taken.');
-            const user = { username, password: pw, name, role: 'student' };
+            const user = {
+                username, password: pw, name, role: 'student',
+                profile: { fullName: name },
+                consent: { termsVersion: policyVersion, privacyVersion: policyVersion, acceptedAt: new Date().toISOString() }
+            };
             users.push(user);
             if (!store.set('ccdUsers', users)) return fail('Could not save your account (browser storage unavailable).');
             err.classList.add('hidden');

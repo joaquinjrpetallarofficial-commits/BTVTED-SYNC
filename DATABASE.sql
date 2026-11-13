@@ -19,6 +19,28 @@ CREATE TABLE IF NOT EXISTS users (
   created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- A profile is kept separate from authentication credentials.
+CREATE TABLE IF NOT EXISTS user_profiles (
+  profile_id       INT AUTO_INCREMENT PRIMARY KEY,
+  user_id          INT NOT NULL UNIQUE,
+  student_number   VARCHAR(50) NULL UNIQUE,
+  program          VARCHAR(120) NULL,
+  year_level       TINYINT UNSIGNED NULL,
+  updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- Store an auditable record of the policy versions accepted at signup.
+CREATE TABLE IF NOT EXISTS privacy_consents (
+  consent_id       BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id          INT NOT NULL,
+  terms_version    VARCHAR(30) NOT NULL,
+  privacy_version  VARCHAR(30) NOT NULL,
+  accepted_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+  INDEX idx_consent_user_date (user_id, accepted_at)
+);
+
 CREATE TABLE IF NOT EXISTS categories (
   category_id    INT AUTO_INCREMENT PRIMARY KEY,
   name           VARCHAR(100) NOT NULL UNIQUE
@@ -155,6 +177,34 @@ WHERE NOT EXISTS (
 );
 
 -- ---------- Queries matching the app's features ----------
+
+-- Login: look up the account using a prepared statement. Verify the submitted
+-- password against password_hash in trusted server code; never compare/store
+-- plaintext passwords in SQL or expose password_hash to browser code.
+SELECT user_id, username, password_hash, full_name, role
+FROM users
+WHERE username = :username;
+
+-- Student profile
+SELECT u.user_id, u.username, u.full_name, u.role,
+       p.student_number, p.program, p.year_level
+FROM users u
+LEFT JOIN user_profiles p ON p.user_id = u.user_id
+WHERE u.user_id = :user_id;
+
+-- Signup must be one transaction in trusted server code. Hash the password
+-- with Argon2id or bcrypt before inserting. Assign student role server-side;
+-- never accept a requested admin role from public signup.
+-- INSERT INTO users (username, password_hash, full_name, role)
+-- VALUES (:username, :password_hash, :full_name, 'student');
+-- INSERT INTO user_profiles (user_id, student_number, program, year_level)
+-- VALUES (:user_id, :student_number, :program, :year_level);
+-- INSERT INTO privacy_consents (user_id, terms_version, privacy_version)
+-- VALUES (:user_id, :terms_version, :privacy_version);
+
+-- Create or promote an administrator only through a trusted, authorized
+-- administrator/setup process. Never expose this operation to public signup.
+-- UPDATE users SET role = 'admin' WHERE user_id = :user_id;
 
 -- Repository search + category filter + year sort (newest first)
 SELECT p.paper_id, p.title, p.authors, p.pub_year, c.name AS category, p.abstract
