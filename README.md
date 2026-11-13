@@ -17,7 +17,7 @@ The full Supabase schema is in [`supabase/migrations/20261113150000_initial_sche
 
 ## Run locally
 
-Open `index.html` in a modern browser from the repository root. Keep `papers-data.js` beside it. The standalone HTML file can also be opened on its own.
+Serve the repository root over HTTP (for example with the VS Code Live Server extension) and open `index.html`; keep `papers-data.js` beside it. The standalone HTML file can also be served directly. Supabase Auth does not work reliably from a `file://` URL.
 
 Tailwind CSS loads from its CDN, so an internet connection is needed for styling. The application stores accounts, submissions, view counts, and signup-consent versions/timestamps in the current browser's local storage; this data is not shared with other users or devices. New signups must separately check that they agree to the Terms and Conditions and acknowledge the Privacy Policy. Sign-in requires choosing the matching student or administrator account type; public signup can only create student accounts.
 
@@ -29,13 +29,15 @@ The migration has **not** been run against a Supabase project. To apply it using
 2. From the repository root, link your project with `supabase link --project-ref YOUR_PROJECT_REF`.
 3. Review the migration, then apply it using `supabase db push`.
 
+Configure the project's Auth Site URL and allowed redirect URLs for your deployed site and local development origin. The website uses the public publishable key only; never put a secret/service-role key in the browser.
+
 Alternatively, review and run the migration in the Supabase Dashboard SQL Editor. It creates a private `research-papers` storage bucket (PDFs up to 2 MB), enables row-level security, and seeds discipline categories and five sample papers. Promote a trusted account to administrator only by running the commented admin setup statements at the end of the migration in the SQL Editor. Use either the CLI or SQL Editor to apply the migration, not both.
 
 Supabase Auth stores and verifies passwords; there is no password table or password hash in this migration. Public signup creates only student roles. Admin role changes must be performed by an authorized operator.
 
 ## Important limitations
 
-The current HTML is still a local-storage prototype and does not call Supabase. Its browser-based login and role checks can be altered by visitors, and demo credentials remain in the application code. Do not use real or sensitive account information until the HTML is integrated with Supabase Auth and the database policies have been tested.
+The website login and signup use Supabase Auth with the project's public publishable key. Account roles and consent records require the database migration above to be applied. Research submissions, view counts, and PDF uploads still use browser local storage and do not sync to Supabase; the admin interface is therefore still a prototype and must not be used for sensitive or official records.
 
 The signup policies are draft templates that describe the browser-only prototype. Before real institutional use, have the responsible institution review them and specify its data controller/contact, lawful basis, retention periods, user-rights process, and service providers.
 

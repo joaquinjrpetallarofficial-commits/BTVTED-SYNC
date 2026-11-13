@@ -168,6 +168,16 @@ begin
   values (new.id, 'student')
   on conflict (user_id) do nothing;
 
+  if nullif(btrim(new.raw_user_meta_data ->> 'terms_version'), '') is not null
+     and nullif(btrim(new.raw_user_meta_data ->> 'privacy_version'), '') is not null then
+    insert into public.privacy_consents (user_id, terms_version, privacy_version)
+    values (
+      new.id,
+      btrim(new.raw_user_meta_data ->> 'terms_version'),
+      btrim(new.raw_user_meta_data ->> 'privacy_version')
+    );
+  end if;
+
   return new;
 end;
 $$;

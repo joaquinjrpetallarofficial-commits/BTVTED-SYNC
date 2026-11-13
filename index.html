@@ -6,6 +6,7 @@
     <title>CCD BTVTeD Sync - Open Student Research Search</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="papers-data.js"></script>
     <style type="text/tailwindcss">
         .field { @apply w-full px-4 py-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent; }
@@ -61,10 +62,9 @@
             <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200 w-full max-w-md">
                 <div id="login-form">
                     <h2 class="text-xl font-bold text-blue-900 mb-1">Log In</h2>
-                    <p class="text-sm text-slate-500 mb-6">Sign in to browse the student research repository. Admin accounts must be created by a repository administrator.</p>
-                    <div id="login-error" class="hidden mb-4 text-sm bg-red-50 text-red-700 border border-red-200 rounded-lg px-4 py-2">Incorrect username or password.</div>
-                    <div class="mb-4"><label class="lbl" for="login-role">Account type</label><select id="login-role" class="field bg-white"><option value="student">Student</option><option value="admin">Administrator</option></select></div>
-                    <div class="mb-4"><label class="lbl">Username</label><input type="text" id="login-username" autocomplete="username" class="field" placeholder="Enter your username"></div>
+                    <p class="text-sm text-slate-500 mb-6">Sign in with your Supabase email and password.</p>
+                    <div id="login-error" class="hidden mb-4 text-sm bg-red-50 text-red-700 border border-red-200 rounded-lg px-4 py-2">Unable to sign in.</div>
+                    <div class="mb-4"><label class="lbl" for="login-email">Email</label><input type="email" id="login-email" autocomplete="username" class="field" placeholder="you@example.com" required></div>
                     <div class="mb-6"><label class="lbl">Password</label><input type="password" id="login-password" autocomplete="current-password" class="field" placeholder="Enter your password"></div>
                     <button id="login-btn" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition">Log In</button>
                     <p class="text-sm text-slate-500 text-center mt-4">No account yet? <button onclick="toggleAuth('signup')" class="text-blue-600 font-medium hover:underline">Sign up</button></p>
@@ -74,7 +74,8 @@
                     <p class="text-sm text-slate-500 mb-6">Sign up as a student to upload your research.</p>
                     <div id="signup-error" class="hidden mb-4 text-sm bg-red-50 text-red-700 border border-red-200 rounded-lg px-4 py-2"></div>
                     <div class="mb-4"><label class="lbl">Full Name</label><input type="text" id="su-name" class="field" placeholder="Juan Dela Cruz"></div>
-                    <div class="mb-4"><label class="lbl">Username</label><input type="text" id="su-username" autocomplete="username" class="field" placeholder="Choose a username"></div>
+                    <div class="mb-4"><label class="lbl" for="su-email">Email</label><input type="email" id="su-email" autocomplete="email" class="field" placeholder="you@example.com" required></div>
+                    <div class="mb-4"><label class="lbl" for="su-username">Username</label><input type="text" id="su-username" autocomplete="username" class="field" placeholder="Choose a username" required></div>
                     <div class="mb-4"><label class="lbl">Password</label><input type="password" id="su-password" autocomplete="new-password" class="field" placeholder="At least 6 characters"></div>
                     <div class="mb-6"><label class="lbl">Confirm Password</label><input type="password" id="su-confirm" autocomplete="new-password" class="field" placeholder="Re-enter your password"></div>
                     <div class="mb-6 space-y-3 text-sm text-slate-600">
@@ -278,6 +279,10 @@
 
     <!-- JavaScript Application Logic -->
     <script>
+        const supabaseClient = window.supabase.createClient(
+            'https://qgfsymyesesrouwfntck.supabase.co',
+            'sb_publishable_CPbtpMhopCJJCI_uHq_JRQ_HpU8_DzG'
+        );
         // Research data is loaded from papers-data.js (see <script src> in the head of this file)
 
         let researchPapers = seedPapers.slice();
@@ -412,15 +417,6 @@
         const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         const el = id => document.getElementById(id);
         const getSubs = () => store.get('ccdSubs', []);
-        function getUsers() {
-            let u = store.get('ccdUsers', null);
-            if (!u) {
-                u = [{ username: 'admin', password: 'ccd2025', name: 'Admin', role: 'admin' },
-                     { username: 'student', password: 'btvted', name: 'Student', role: 'student' }];
-                store.set('ccdUsers', u);
-            }
-            return u;
-        }
         let currentUser = null;
 
         function refreshPapers() {
@@ -621,17 +617,17 @@
                 title: 'Terms and Conditions',
                 paragraphs: [
                     'CCD BTVTeD Sync is a student research repository prototype for browsing sample research and submitting papers for review. Use it lawfully and provide accurate information. Do not upload material you do not have permission to share, or information that should remain confidential.',
-                    'Submissions are pending until an administrator reviews them. Approval in this prototype is not an official academic certification. Do not rely on its browser-only login, roles, view counts, or storage for security or official records.',
-                    'This prototype stores account details, submissions, and uploaded PDFs in this browser only. Data does not sync to the college or across devices and may be lost if browser storage is cleared. Do not reuse a real password or submit sensitive personal information.',
+                    'Submissions are pending until an administrator reviews them. Approval in this prototype is not an official academic certification. Research submissions and PDFs remain in this browser and are not shared across devices.',
+                    'Supabase Auth verifies account passwords. Do not reuse a password from another service. The repository is a prototype and should not be used for confidential information or official academic records.',
                     'The repository is provided as-is for demonstration. The college or program should review and replace these draft terms before public or institutional use.'
                 ]
             },
             privacy: {
                 title: 'Privacy Policy',
                 paragraphs: [
-                    'This draft policy applies to the browser-based prototype. During signup it records your name, username, and password in this browser’s local storage. When you submit a paper it also stores the paper details, submission status, and an attached PDF (up to 2 MB). The prototype may store view counts and a record of your acceptance of these terms and this policy.',
-                    'The data is used only by the prototype to sign in, display submissions, support review screens, and record consent. It is not sent to a server by this version of the app. Anyone with access to this browser profile may be able to inspect or change locally stored data; passwords are not protected by a production authentication service.',
-                    'Data remains in this browser until removed from the application’s local storage or browser data. To clear it, remove this site’s local storage in your browser settings. This also permanently removes saved accounts, papers, and consent records from that browser.',
+                    'Supabase Auth processes your email and password. The website sends your name, username, and Terms/Privacy Policy version acknowledgements to Supabase when you register. Research submissions, view counts, and uploaded PDFs in this prototype are stored in this browser only.',
+                    'Supabase account and consent records are stored in the project database. Anyone with access to this browser profile may inspect or change locally stored research data. Do not submit confidential or sensitive information.',
+                    'Browser-stored research data can be removed by clearing this site’s local storage. Supabase account and consent records must be managed through the project administrator.',
                     'Before real deployment, the responsible institution must identify its data controller and contact, lawful basis, retention periods, user rights process, and any processors or hosting providers. This draft is not legal advice and must be reviewed and completed by the institution.'
                 ]
             }
@@ -652,40 +648,81 @@
             el('policy-modal').classList.add('hidden');
             el('policy-modal').classList.remove('flex');
         }
-        function startSession(user) {
-            try { sessionStorage.setItem('ccdUser', user.username); } catch (e) {}
+        async function getAppUser(authUser) {
+            const [{ data: profile, error: profileError }, { data: role, error: roleError }] = await Promise.all([
+                supabaseClient.from('profiles').select('username, full_name').eq('id', authUser.id).single(),
+                supabaseClient.from('user_roles').select('role').eq('user_id', authUser.id).single()
+            ]);
+            if (profileError || roleError) {
+                throw new Error('Your Supabase account is valid, but the app database schema or role is not ready. Apply the repository migration, then try again.');
+            }
+            if (!profile || !role) throw new Error('Your app profile or role is missing. Ask the project administrator to check the database migration.');
+            return { id: authUser.id, email: authUser.email, username: profile.username, name: profile.full_name, role: role.role };
+        }
+        async function activateAuthUser(authUser) {
+            const user = await getAppUser(authUser);
             showApp(user);
         }
-        function login() {
-            const user = getUsers().find(u => u.username === el('login-username').value.trim().toLowerCase() &&
-                u.password === el('login-password').value && u.role === el('login-role').value);
-            if (!user) return el('login-error').classList.remove('hidden');
-            el('login-error').classList.add('hidden');
-            startSession(user);
+        async function login() {
+            const email = el('login-email').value.trim(), password = el('login-password').value;
+            if (!email || !password) {
+                el('login-error').textContent = 'Enter your email and password.';
+                return el('login-error').classList.remove('hidden');
+            }
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) {
+                el('login-error').textContent = error.message;
+                return el('login-error').classList.remove('hidden');
+            }
+            try {
+                await activateAuthUser(data.user);
+                el('login-error').classList.add('hidden');
+            } catch (error) {
+                await supabaseClient.auth.signOut();
+                el('login-error').textContent = error.message;
+                el('login-error').classList.remove('hidden');
+            }
         }
-        function signup() {
+        async function signup() {
             const name = el('su-name').value.trim(), username = el('su-username').value.trim().toLowerCase(),
-                  pw = el('su-password').value, err = el('signup-error');
+                  email = el('su-email').value.trim(), pw = el('su-password').value, err = el('signup-error');
             const fail = t => { err.textContent = t; err.classList.remove('hidden'); };
-            if (!name || !username || !pw) return fail('Please fill in all fields.');
+            if (!name || !username || !email || !pw) return fail('Please fill in all fields.');
             if (!el('su-terms-consent').checked) return fail('Please read and agree to the Terms and Conditions to create an account.');
             if (!el('su-privacy-consent').checked) return fail('Please read and acknowledge the Privacy Policy to create an account.');
             if (pw.length < 6) return fail('Password must be at least 6 characters.');
             if (pw !== el('su-confirm').value) return fail('Passwords do not match.');
-            const users = getUsers();
-            if (users.some(u => u.username === username)) return fail('That username is already taken.');
-            const user = {
-                username, password: pw, name, role: 'student',
-                profile: { fullName: name },
-                consent: { termsVersion: policyVersion, privacyVersion: policyVersion, acceptedAt: new Date().toISOString() }
-            };
-            users.push(user);
-            if (!store.set('ccdUsers', users)) return fail('Could not save your account (browser storage unavailable).');
+            const { data, error } = await supabaseClient.auth.signUp({
+                email,
+                password: pw,
+                options: { data: {
+                    username,
+                    full_name: name,
+                    terms_version: policyVersion,
+                    privacy_version: policyVersion
+                } }
+            });
+            if (error) return fail(error.message);
             err.classList.add('hidden');
-            startSession(user);
+            if (!data.session) {
+                err.textContent = 'Account created. Check your email to confirm it, then log in.';
+                err.classList.remove('hidden');
+                return;
+            }
+            try {
+                await activateAuthUser(data.user);
+            } catch (error) {
+                await supabaseClient.auth.signOut();
+                fail(error.message);
+            }
         }
-        function logout() {
-            try { sessionStorage.removeItem('ccdUser'); } catch (e) {}
+        async function logout() {
+            const { error } = await supabaseClient.auth.signOut();
+            if (error) {
+                el('login-error').textContent = error.message;
+                el('login-error').classList.remove('hidden');
+                return;
+            }
             currentUser = null;
             el('app-view').classList.replace('flex', 'hidden');
             el('login-view').classList.replace('hidden', 'flex');
@@ -694,15 +731,16 @@
         }
         el('login-btn').addEventListener('click', login);
         el('signup-btn').addEventListener('click', signup);
-        ['login-username', 'login-password'].forEach(i => el(i).addEventListener('keydown', e => { if (e.key === 'Enter') login(); }));
-        ['su-name', 'su-username', 'su-password', 'su-confirm'].forEach(i => el(i).addEventListener('keydown', e => { if (e.key === 'Enter') signup(); }));
+        ['login-email', 'login-password'].forEach(i => el(i).addEventListener('keydown', e => { if (e.key === 'Enter') login(); }));
+        ['su-name', 'su-email', 'su-username', 'su-password', 'su-confirm'].forEach(i => el(i).addEventListener('keydown', e => { if (e.key === 'Enter') signup(); }));
 
-        // Restore session on reload
-        try {
-            const saved = sessionStorage.getItem('ccdUser');
-            const u = saved && getUsers().find(v => v.username === saved.toLowerCase());
-            if (u) showApp(u);
-        } catch (e) {}
+        supabaseClient.auth.getSession().then(async ({ data, error }) => {
+            if (error) throw error;
+            if (data.session) await activateAuthUser(data.session.user);
+        }).catch(error => {
+            el('login-error').textContent = error.message;
+            el('login-error').classList.remove('hidden');
+        });
 
         // ---------- Research FAQ chatbot (keyword matching, runs fully in the browser) ----------
         const faqs = [
